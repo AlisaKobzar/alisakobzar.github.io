@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>feedback version 2</title>
+    <meta charset="utf-8" />
+</head>
+
+<script>
+    const audioConstraints = {
+        autoGainControl: false,
+        echoCancellation: false,
+        noiseSuppression: false
+    };
+
+    navigator.mediaDevices.getUserMedia({
+            audio: audioConstraints,
+            video: false
+        }).then(input => {
+
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+
+            let audioContext = new AudioContext();
+            let now = audioContext.currentTime;
+            let inputSource = audioContext.createMediaStreamSource(input);
+            let compressor = audioContext.createDynamicsCompressor();
+            let biquadFilter = audioContext.createBiquadFilter();
+
+            compressor.threshold.setValueAtTime(-50, now);
+            compressor.knee.setValueAtTime(10, now);
+            compressor.ratio.setValueAtTime(20, now);
+            compressor.attack.setValueAtTime(0.001, now);
+            compressor.release.setValueAtTime(1, now);
+
+            biquadFilter.type = "lowpass";
+            biquadFilter.frequency.setValueAtTime(1000, now);
+
+            inputSource.connect(biquadFilter);
+            biquadFilter.connect(compressor);
+            compressor.connect(audioContext.destination);
+        })
+        .catch(function(err) {
+            console.error('Failed to get audio input', err);
+        });
+</script>
+
+</html>
